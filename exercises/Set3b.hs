@@ -115,10 +115,10 @@ sorted [] = True
 --sorted' current last
 --    | last > current = False
 --    | otherwise      = sorted' x last
-
-sorted (x:y:_)
+sorted [x] = True
+sorted (x:y:xs)
     | y < x     = False
-    | otherwise = True
+    | otherwise = sorted (y:xs)
 
 ------------------------------------------------------------------------------
 -- Ex 6: compute the partial sums of the given list like this:
@@ -130,7 +130,14 @@ sorted (x:y:_)
 -- Use pattern matching and recursion (and the list constructors : and [])
 
 sumsOf :: [Int] -> [Int]
-sumsOf xs = todo
+sumsOf [] = []
+sumsOf (x:xs) = x : sumsOf' x xs
+    where
+        sumsOf' _ []         = []
+        sumsOf' total (y:ys) = (total + y) : sumsOf' (total + y) ys
+--sumsOf [x] = [x]
+--sumsOf [x,y] = [x, x+y]
+--sumsOf (x:y:xs) = x : x+y : sumsOf (y:xs)
 
 ------------------------------------------------------------------------------
 -- Ex 7: implement the function merge that merges two sorted lists of
@@ -143,7 +150,13 @@ sumsOf xs = todo
 --   merge [1,1,6] [1,2]   ==> [1,1,1,2,6]
 
 merge :: [Int] -> [Int] -> [Int]
-merge xs ys = todo
+merge [] [] = []
+merge [] ys = ys
+merge xs [] = xs
+merge (x:xs) (y:ys)
+    | x < y     = x : merge xs (y:ys)
+    | otherwise = y : merge (x:xs) ys
+
 
 ------------------------------------------------------------------------------
 -- Ex 8: compute the biggest element, using a comparison function
@@ -167,7 +180,13 @@ merge xs ys = todo
 --     ==> ("Mouse",8)
 
 mymaximum :: (a -> a -> Bool) -> a -> [a] -> a
-mymaximum bigger initial xs = todo
+mymaximum bigger initial xs = biggest initial xs
+    where
+        biggest current [] = current
+        biggest current (x:xs)
+            | bigger x current = biggest x xs
+            | otherwise        = biggest current xs
+
 
 ------------------------------------------------------------------------------
 -- Ex 9: define a version of map that takes a two-argument function
@@ -181,7 +200,15 @@ mymaximum bigger initial xs = todo
 -- Use recursion and pattern matching. Do not use any library functions.
 
 map2 :: (a -> b -> c) -> [a] -> [b] -> [c]
-map2 f as bs = todo
+map2 _ [] [] = []
+map2 _ _ [] = []
+map2 _ [] _ = []
+map2 f (a:as) (b:bs) = f a b : map2 f as bs 
+
+
+--mymap :: (a -> b) -> [a] -> [b]
+--mymap _ [] = []
+--mymap f (x:xs) = f x : mymap f xs
 
 ------------------------------------------------------------------------------
 -- Ex 10: implement the function maybeMap, which works a bit like a
@@ -205,4 +232,18 @@ map2 f as bs = todo
 --   ==> []
 
 maybeMap :: (a -> Maybe b) -> [a] -> [b]
-maybeMap f xs = todo
+maybeMap f [] = []
+maybeMap f (x:xs) =
+    case f x of
+     Just y  -> y : maybeMap f xs
+     Nothing -> maybeMap f xs
+
+--mymap :: (a -> b) -> [a] -> [b]
+--mymap _ [] = []
+--mymap f (x:xs) = f x : mymap f xs
+
+--myfilter :: (a -> Bool) -> [a] -> [a]
+--myfilter _ [] = []
+--myfilter p (x:xs)
+--  | p x       = x : myfilter p xs
+--  | otherwise = myfilter p xs
