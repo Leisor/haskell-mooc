@@ -7,6 +7,7 @@ import Data.List
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid
 import Data.Semigroup
+import Data.Bool (Bool(True))
 
 ------------------------------------------------------------------------------
 -- Ex 1: you'll find below the types Time, Distance and Velocity,
@@ -26,11 +27,11 @@ data Velocity = Velocity Double
 
 -- velocity computes a velocity given a distance and a time
 velocity :: Distance -> Time -> Velocity
-velocity = todo
+velocity (Distance s) (Time t) = Velocity (s / t)
 
 -- travel computes a distance given a velocity and a time
 travel :: Velocity -> Time -> Distance
-travel = todo
+travel (Velocity v) (Time t) = Distance (v * t)
 
 ------------------------------------------------------------------------------
 -- Ex 2: let's implement a simple Set datatype. A Set is a list of
@@ -49,15 +50,23 @@ data Set a = Set [a]
 
 -- emptySet is a set with no elements
 emptySet :: Set a
-emptySet = todo
+emptySet = Set []
 
 -- member tests if an element is in a set
 member :: Eq a => a -> Set a -> Bool
-member = todo
+member y (Set []) = False
+member y (Set (x:xs)) 
+  | y == x = True
+  | otherwise = member y (Set xs)
 
 -- add a member to a set
-add :: a -> Set a -> Set a
-add = todo
+add :: Ord a => a -> Set a -> Set a
+add y (Set []) = Set [y]
+add y (Set (x:xs))
+  | y < x     = Set (y : x : xs)             -- insert before x
+  | y == x    = Set (x : xs)                 -- already exists
+  | otherwise = case add y (Set xs) of
+                  Set zs -> Set (x:zs)
 
 ------------------------------------------------------------------------------
 -- Ex 3: a state machine for baking a cake. The type Event represents
@@ -92,10 +101,36 @@ add = todo
 data Event = AddEggs | AddFlour | AddSugar | Mix | Bake
   deriving (Eq,Show)
 
-data State = Start | Error | Finished
+data State 
+  = Start 
+  | EggsAdded
+  | FlourAdded
+  | SugarAdded
+  | FlourAndSugarAdded
+  | Mixed
+  | Baked
+  | Finished
+  | Error
   deriving (Eq,Show)
 
-step = todo
+
+
+step :: State -> Event -> State
+step Start AddEggs = EggsAdded
+step Start _ = Error
+step EggsAdded AddSugar = SugarAdded
+step EggsAdded AddFlour = FlourAdded
+step EggsAdded _ = Error
+step SugarAdded AddFlour = FlourAndSugarAdded
+step SugarAdded _ = Error
+step FlourAdded AddSugar = FlourAndSugarAdded
+step FlourAdded _ = Error
+step FlourAndSugarAdded Mix = Mixed
+step FlourAndSugarAdded _ = Error
+step Mixed Bake = Finished
+step Mixed _ = Error
+step Finished _ = Finished
+step Error _ = Error
 
 -- do not edit this
 bake :: [Event] -> State
@@ -115,7 +150,10 @@ bake events = go Start events
 --   average (1.0 :| [2.0,3.0])  ==>  2.0
 
 average :: Fractional a => NonEmpty a -> a
-average = todo
+average xs = total / count
+    where
+        total = sum xs
+        count = fromIntegral (length xs)
 
 ------------------------------------------------------------------------------
 -- Ex 5: reverse a NonEmpty list.
@@ -123,7 +161,11 @@ average = todo
 -- PS. The Data.List.NonEmpty type has been imported for you
 
 reverseNonEmpty :: NonEmpty a -> NonEmpty a
-reverseNonEmpty = todo
+reverseNonEmpty (x :| xs) =
+  case reverse (x:xs) of
+    (y:ys) -> y :| ys
+
+
 
 ------------------------------------------------------------------------------
 -- Ex 6: implement Semigroup instances for the Distance, Time and
@@ -134,6 +176,7 @@ reverseNonEmpty = todo
 --
 -- velocity (Distance 50 <> Distance 10) (Time 1 <> Time 2)
 --    ==> Velocity 20
+
 
 
 ------------------------------------------------------------------------------
