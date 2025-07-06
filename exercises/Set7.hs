@@ -63,8 +63,8 @@ member y (Set (x:xs))
 add :: Ord a => a -> Set a -> Set a
 add y (Set []) = Set [y]
 add y (Set (x:xs))
-  | y < x     = Set (y : x : xs)             -- insert before x
-  | y == x    = Set (x : xs)                 -- already exists
+  | y < x     = Set (y : x : xs)
+  | y == x    = Set (x : xs)
   | otherwise = case add y (Set xs) of
                   Set zs -> Set (x:zs)
 
@@ -177,6 +177,14 @@ reverseNonEmpty (x :| xs) =
 -- velocity (Distance 50 <> Distance 10) (Time 1 <> Time 2)
 --    ==> Velocity 20
 
+instance Semigroup Distance where
+  Distance a <> Distance b = Distance (a+b)
+
+instance Semigroup Time where
+  Time a <> Time b = Time (a+b)
+
+instance Semigroup Velocity where
+  Velocity a <> Velocity b = Velocity (a+b)
 
 
 ------------------------------------------------------------------------------
@@ -186,6 +194,12 @@ reverseNonEmpty (x :| xs) =
 -- What's the right definition for mempty?
 --
 -- What are the class constraints for the instances?
+
+instance Ord a => Monoid (Set a) where
+    mempty = Set []
+
+instance Ord a => Semigroup (Set a) where
+  (<>) (Set xs) (Set ys) = foldr add (Set ys) xs
 
 
 ------------------------------------------------------------------------------
@@ -209,28 +223,43 @@ reverseNonEmpty (x :| xs) =
 
 data Operation1 = Add1 Int Int
                 | Subtract1 Int Int
+                | Multiply1 Int Int
   deriving Show
 
 compute1 :: Operation1 -> Int
 compute1 (Add1 i j) = i+j
 compute1 (Subtract1 i j) = i-j
+compute1 (Multiply1 i j) = i*j
 
 show1 :: Operation1 -> String
-show1 = todo
+show1 (Add1 i j) = show i ++ "+" ++ show j
+show1 (Subtract1 i j) = show i ++ "-" ++ show j
+show1 (Multiply1 i j) = show i ++ "*" ++ show j
+
+
 
 data Add2 = Add2 Int Int
   deriving Show
 data Subtract2 = Subtract2 Int Int
   deriving Show
+data Multiply2 = Multiply2 Int Int
+  deriving Show
 
 class Operation2 op where
   compute2 :: op -> Int
+  show2 :: op -> String
 
 instance Operation2 Add2 where
   compute2 (Add2 i j) = i+j
+  show2 (Add2 i j)    = show i ++ "+" ++ show j
 
 instance Operation2 Subtract2 where
   compute2 (Subtract2 i j) = i-j
+  show2 (Subtract2 i j)    = show i ++ "-" ++ show j
+
+instance Operation2 Multiply2 where
+  compute2 (Multiply2 i j) = i*j
+  show2 (Multiply2 i j)    = show i ++ "*" ++ show j
 
 
 ------------------------------------------------------------------------------
@@ -241,7 +270,7 @@ instance Operation2 Subtract2 where
 -- password is allowed.
 --
 -- Examples:
---   passwordAllowed "short" (MinimumLength 8) ==> False
+--   passwordAllowed "short" (Or 8) ==> False
 --   passwordAllowed "veryLongPassword" (MinimumLength 8) ==> True
 --   passwordAllowed "password" (ContainsSome "0123456789") ==> False
 --   passwordAllowed "p4ssword" (ContainsSome "0123456789") ==> True
@@ -260,7 +289,11 @@ data PasswordRequirement =
   deriving Show
 
 passwordAllowed :: String -> PasswordRequirement -> Bool
-passwordAllowed = todo
+passwordAllowed p (MinimumLength n) = length p >= n
+passwordAllowed p (ContainsSome s) = any (`elem` p) s
+passwordAllowed p (DoesNotContain s) = all (`notElem` p) s
+passwordAllowed p (And x y) = passwordAllowed p x && passwordAllowed p y
+passwordAllowed p (Or x y) = passwordAllowed p x || passwordAllowed p y
 
 ------------------------------------------------------------------------------
 -- Ex 10: a DSL for simple arithmetic expressions with addition and
@@ -282,17 +315,21 @@ passwordAllowed = todo
 --     ==> "(3*(1+1))"
 --
 
-data Arithmetic = Todo
+data Arithmetic = Literal Integer | Operation String Arithmetic Arithmetic
   deriving Show
 
 literal :: Integer -> Arithmetic
-literal = todo
+literal x = Literal x
 
 operation :: String -> Arithmetic -> Arithmetic -> Arithmetic
-operation = todo
+operation op a b = Operation op a b
 
 evaluate :: Arithmetic -> Integer
-evaluate = todo
+evaluate (Literal x) = x
+evaluate (Operation "+" a b) = evaluate a + evaluate b
+evaluate (Operation "-" a b) = evaluate a - evaluate b
+evaluate (Operation "*" a b) = evaluate a * evaluate b
 
 render :: Arithmetic -> String
-render = todo
+render (Literal x) = show x
+render (Operation op a b) = "(" ++ render a ++ op ++ render b ++ ")"
