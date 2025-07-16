@@ -1,5 +1,7 @@
 # Haskell MOOC
 
+*Test row*
+
 <p align="center"><img alt="Course logo" src="img/haskell-mooc-logo.svg" width="400" align="center"></p>
 
 University of Helsinki
